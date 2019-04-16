@@ -27,6 +27,10 @@ public class Humano {
         this.IBeber = beber;
     }
 
+    public Humano() {
+
+    }
+
     public Integer getTolerancia() {
         return tolerancia;
     }
