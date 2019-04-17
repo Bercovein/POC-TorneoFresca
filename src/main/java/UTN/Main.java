@@ -15,13 +15,6 @@ public class Main {
 
     public static void main(String[] args) {
 
-        try {
-            //1- Conexion a la DB
-            Connection myConnection = DriverManager.getConnection("jdbc:mysql://localhost:3308/torneo", "root", "");
-            //2- Crear la sentencia
-            Statement myStatement = myConnection.createStatement();
-
-
             System.out.println("\n         TORNEO DE FRESCAS! \nHAGAN SENTIR ORGULLOSOS A SUS DIOSES!" + "\n");
             Humano tabernero = new Tabernero(
                     "Barbarin Hallconen",
@@ -64,7 +57,6 @@ public class Main {
                 Humano v = Vikings.remove(new Random().nextInt(Vikings.size()));
                 Humano s = Spartans.remove((new Random()).nextInt(Spartans.size()));
 
-
                 System.out.println("---------------------------------------------------------------------------------------");
                 System.out.println("VIKINGO: " + v.toString() + "\n" + " VS " + "\n" + "ESPARTANO: " + s.toString());
                 System.out.println("---------------------------------------------------------------------------------------");
@@ -78,10 +70,8 @@ public class Main {
                     p = s;
                 }
 
-                String sql = "insert into ganadores(nombre_ganador,nombre_perdedor,ingerido)" +
-                        "values(" + ganador.getNombre() + "," + p.getNombre() + "," + ganador.getIngerido() + ")";
+                guardarGanadores(ganador,p);
 
-                myStatement.executeUpdate(sql);
 
                 if (ganador.equals(v)) {
                     clase = "Vikingo";
@@ -97,17 +87,14 @@ public class Main {
                 System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
                 Humano granFinale = enfrentar(tabernero, ganador);
 
-                Humano gp = null;
+                Humano gp;
                 if (!granFinale.equals(ganador)) {
                     gp = ganador;
                 } else {
                     gp = tabernero;
                 }
 
-                String sql2 = "insert into ganadores(nombre_ganador,nombre_perdedor, ingerido)" +
-                        "values(" + granFinale.getNombre() + "," + gp.getNombre() + "," + granFinale.getIngerido() + ")";
-
-                myStatement.executeUpdate(sql2);
+                guardarGanadores(granFinale,gp);
 
                 System.out.println("GANADOR FINAL: " + granFinale.getNombre() + "!\n");
                 System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
@@ -117,11 +104,7 @@ public class Main {
 
             } while ((Vikings.size() > 0) && (Spartans.size() > 0));
 
-            resultados(myStatement);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+            resultados();
 
     }
 
@@ -195,9 +178,11 @@ public class Main {
         }
     }
 
-    public static void resultados(Statement myStatement) {
+    public static void resultados() {
 
         try{
+            Connection myConnection = DriverManager.getConnection("jdbc:mysql://localhost:3306/torneo", "root", "");
+            Statement myStatement = myConnection.createStatement();
             ResultSet myResult = myStatement.executeQuery("select * from ganadores");
 
             System.out.println("--- TABLA DE RESULTADOS ---");
@@ -212,8 +197,31 @@ public class Main {
                 System.out.println("------------------------------------");
             }
             myStatement.close();
+            myConnection.close();
         }catch (SQLException e){
             e.getStackTrace();
+        }
+    }
+
+    public static void guardarGanadores(Humano ganador, Humano perdedor){
+
+        try {
+            Connection myConnection = DriverManager.getConnection(
+                       "jdbc:mysql://localhost:3306/torneo", "root", "");
+
+            String sqlQuery1 = "insert into ganadores(nombre_ganador,nombre_perdedor,ingerido)" +
+                    "values(?,?,?)";
+            PreparedStatement myStatement = myConnection.prepareStatement(sqlQuery1);
+            myStatement.setString(1, ganador.getNombre());
+            myStatement.setString(2, perdedor.getNombre());
+            myStatement.setInt(3, ganador.getIngerido());
+            myStatement.execute();
+
+            myStatement.close();
+            myConnection.close();
+
+        } catch (SQLException e) {
+            throw new IllegalStateException("Cannot connect the database!", e);
         }
     }
 }
